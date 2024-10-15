@@ -3,7 +3,7 @@
 Plugin Name: WPC Smart Quick View for WooCommerce
 Plugin URI: https://wpclever.net/
 Description: WPC Smart Quick View allows users to get a quick look of products without opening the product page.
-Version: 4.1.2
+Version: 4.1.3
 Author: WPClever
 Author URI: https://wpclever.net
 Text Domain: woo-smart-quick-view
@@ -12,12 +12,12 @@ Requires Plugins: woocommerce
 Requires at least: 4.0
 Tested up to: 6.6
 WC requires at least: 3.0
-WC tested up to: 9.2
+WC tested up to: 9.3
 */
 
 defined( 'ABSPATH' ) || exit;
 
-! defined( 'WOOSQ_VERSION' ) && define( 'WOOSQ_VERSION', '4.1.2' );
+! defined( 'WOOSQ_VERSION' ) && define( 'WOOSQ_VERSION', '4.1.3' );
 ! defined( 'WOOSQ_LITE' ) && define( 'WOOSQ_LITE', __FILE__ );
 ! defined( 'WOOSQ_FILE' ) && define( 'WOOSQ_FILE', __FILE__ );
 ! defined( 'WOOSQ_URI' ) && define( 'WOOSQ_URI', plugin_dir_url( __FILE__ ) );
@@ -140,6 +140,10 @@ if ( ! function_exists( 'woosq_init' ) ) {
 
 					// wpml
 					add_filter( 'wcml_multi_currency_ajax_actions', [ $this, 'wcml_multi_currency' ], 99 );
+
+					if ( function_exists( 'wpml_loaded' ) ) {
+						add_filter( 'woosq_thumbnails', [ $this, 'wpml_thumbnails' ], 99 );
+					}
 
 					// WPC Smart Messages
 					add_filter( 'wpcsm_locations', [ $this, 'wpcsm_locations' ] );
@@ -285,8 +289,7 @@ if ( ! function_exists( 'woosq_init' ) ) {
 							}
 						}
 
-						$thumb_ids = apply_filters( 'woosq_thumbnails', $thumb_ids, $product );
-						$thumb_ids = array_unique( $thumb_ids );
+						$thumb_ids = apply_filters( 'woosq_thumbnails', array_unique( $thumb_ids ), $product );
 
 						if ( self::get_setting( 'view', 'popup' ) === 'popup' ) {
 							echo '<div id="woosq-popup" class="woosq-popup mfp-with-anim ' . esc_attr( self::get_setting( 'content_view_details_button', 'no' ) === 'yes' ? 'view-details' : '' ) . '">';
@@ -1345,6 +1348,12 @@ if ( ! function_exists( 'woosq_init' ) ) {
 					$ajax_actions[] = 'woosq_quickview';
 
 					return $ajax_actions;
+				}
+
+				function wpml_thumbnails( $thumbnails ) {
+					return array_map( function ( $thumb_id ) {
+						return apply_filters( 'wpml_object_id', $thumb_id, 'attachment', true );
+					}, $thumbnails );
 				}
 
 				function save_post( $post_id, $post ) {
