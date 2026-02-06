@@ -3,7 +3,7 @@
 Plugin Name: WPC Smart Quick View for WooCommerce
 Plugin URI: https://wpclever.net/
 Description: WPC Smart Quick View allows users to get a quick look at products without opening the product page.
-Version: 4.2.4
+Version: 4.2.8
 Author: WPClever
 Author URI: https://wpclever.net
 Text Domain: woo-smart-quick-view
@@ -12,20 +12,20 @@ Requires Plugins: woocommerce
 Requires at least: 4.0
 Tested up to: 6.8
 WC requires at least: 3.0
-WC tested up to: 10.2
+WC tested up to: 10.3
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 */
 
 defined( 'ABSPATH' ) || exit;
 
-! defined( 'WOOSQ_VERSION' ) && define( 'WOOSQ_VERSION', '4.2.4' );
+! defined( 'WOOSQ_VERSION' ) && define( 'WOOSQ_VERSION', '4.2.8' );
 ! defined( 'WOOSQ_LITE' ) && define( 'WOOSQ_LITE', __FILE__ );
 ! defined( 'WOOSQ_FILE' ) && define( 'WOOSQ_FILE', __FILE__ );
 ! defined( 'WOOSQ_URI' ) && define( 'WOOSQ_URI', plugin_dir_url( __FILE__ ) );
 ! defined( 'WOOSQ_DIR' ) && define( 'WOOSQ_DIR', plugin_dir_path( __FILE__ ) );
 ! defined( 'WOOSQ_SUPPORT' ) && define( 'WOOSQ_SUPPORT', 'https://wpclever.net/support?utm_source=support&utm_medium=woosq&utm_campaign=wporg' );
-! defined( 'WOOSQ_REVIEWS' ) && define( 'WOOSQ_REVIEWS', 'https://wordpress.org/support/plugin/woo-smart-quick-view/reviews/?filter=5' );
+! defined( 'WOOSQ_REVIEWS' ) && define( 'WOOSQ_REVIEWS', 'https://wordpress.org/support/plugin/woo-smart-quick-view/reviews/' );
 ! defined( 'WOOSQ_CHANGELOG' ) && define( 'WOOSQ_CHANGELOG', 'https://wordpress.org/plugins/woo-smart-quick-view/#developers' );
 ! defined( 'WOOSQ_DISCUSSION' ) && define( 'WOOSQ_DISCUSSION', 'https://wordpress.org/support/plugin/woo-smart-quick-view' );
 ! defined( 'WPC_URI' ) && define( 'WPC_URI', WOOSQ_URI );
@@ -123,6 +123,11 @@ if ( ! function_exists( 'woosq_init' ) ) {
 
                     // WPC Smart Messages
                     add_filter( 'wpcsm_locations', [ $this, 'wpcsm_locations' ] );
+
+                    // Nonce check
+                    add_filter( 'woosq_disable_nonce_check', function ( $check, $context ) {
+                        return apply_filters( 'woosc_disable_security_check', $check, $context );
+                    }, 10, 2 );
                 }
 
                 function init() {
@@ -239,16 +244,21 @@ if ( ! function_exists( 'woosq_init' ) ) {
                 }
 
                 function ajax_quickview() {
-                    if ( ! apply_filters( 'woosq_disable_security_check', false ) ) {
+                    if ( ! apply_filters( 'woosq_disable_nonce_check', false, 'quickview' ) ) {
                         if ( ! isset( $_REQUEST['nonce'] ) || ! wp_verify_nonce( sanitize_key( $_REQUEST['nonce'] ), 'woosq-security' ) ) {
                             die( 'Permissions check failed!' );
                         }
                     }
 
-                    global $post, $product;
                     $product_id = absint( apply_filters( 'woosq_product_id', sanitize_key( $_REQUEST['product_id'] ?? 0 ), sanitize_key( $_REQUEST['context'] ?? 'default' ) ) );
 
+                    global $post, $product;
+
                     if ( $product = wc_get_product( $product_id ) ) {
+                        if ( ! current_user_can( 'read_product', $product_id ) && ( $product->get_status() !== 'publish' ) ) {
+                            die( 'Permissions check failed!' );
+                        }
+
                         $post = get_post( $product_id );
                         setup_postdata( $post );
                         $thumb_ids = [];
@@ -567,10 +577,16 @@ if ( ! function_exists( 'woosq_init' ) ) {
 
                 function register_settings() {
                     // settings
-                    register_setting( 'woosq_settings', 'woosq_settings' );
+                    register_setting( 'woosq_settings', 'woosq_settings', [
+                            'type'              => 'array',
+                            'sanitize_callback' => [ $this, 'sanitize_array' ],
+                    ] );
 
                     // localization
-                    register_setting( 'woosq_localization', 'woosq_localization' );
+                    register_setting( 'woosq_localization', 'woosq_localization', [
+                            'type'              => 'array',
+                            'sanitize_callback' => [ $this, 'sanitize_array' ],
+                    ] );
                 }
 
                 function admin_menu() {
@@ -1112,6 +1128,10 @@ if ( ! function_exists( 'woosq_init' ) ) {
                                         <tr class="submit">
                                             <th colspan="2">
                                                 <?php settings_fields( 'woosq_settings' ); ?><?php submit_button(); ?>
+                                                <a style="display: none;" class="wpclever_export"
+                                                   data-key="woosq_settings"
+                                                   data-name="settings"
+                                                   href="#"><?php esc_html_e( 'import / export', 'woo-smart-quick-view' ); ?></a>
                                             </th>
                                         </tr>
                                     </table>
@@ -1194,6 +1214,10 @@ if ( ! function_exists( 'woosq_init' ) ) {
                                         <tr class="submit">
                                             <th colspan="2">
                                                 <?php settings_fields( 'woosq_localization' ); ?><?php submit_button(); ?>
+                                                <a style="display: none;" class="wpclever_export"
+                                                   data-key="woosq_localization"
+                                                   data-name="settings"
+                                                   href="#"><?php esc_html_e( 'import / export', 'woo-smart-quick-view' ); ?></a>
                                             </th>
                                         </tr>
                                     </table>
@@ -1634,6 +1658,18 @@ if ( ! function_exists( 'woosq_init' ) ) {
                     }
 
                     return apply_filters( 'woosq_generate_key', $key );
+                }
+
+                public static function sanitize_array( $arr ) {
+                    foreach ( (array) $arr as $k => $v ) {
+                        if ( is_array( $v ) ) {
+                            $arr[ $k ] = self::sanitize_array( $v );
+                        } else {
+                            $arr[ $k ] = sanitize_post_field( 'post_content', $v, 0, 'db' );
+                        }
+                    }
+
+                    return $arr;
                 }
             }
 
