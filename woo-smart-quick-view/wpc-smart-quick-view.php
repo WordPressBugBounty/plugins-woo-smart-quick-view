@@ -3,7 +3,7 @@
 Plugin Name: WPC Smart Quick View for WooCommerce
 Plugin URI: https://wpclever.net/
 Description: WPC Smart Quick View allows users to get a quick look at products without opening the product page.
-Version: 4.3.1
+Version: 4.3.2
 Author: WPClever
 Author URI: https://wpclever.net
 Text Domain: woo-smart-quick-view
@@ -19,7 +19,7 @@ License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
 defined( 'ABSPATH' ) || exit;
 
-! defined( 'WOOSQ_VERSION' ) && define( 'WOOSQ_VERSION', '4.3.1' );
+! defined( 'WOOSQ_VERSION' ) && define( 'WOOSQ_VERSION', '4.3.2' );
 ! defined( 'WOOSQ_LITE' ) && define( 'WOOSQ_LITE', __FILE__ );
 ! defined( 'WOOSQ_FILE' ) && define( 'WOOSQ_FILE', __FILE__ );
 ! defined( 'WOOSQ_URI' ) && define( 'WOOSQ_URI', plugin_dir_url( __FILE__ ) );
@@ -28,11 +28,14 @@ defined( 'ABSPATH' ) || exit;
 ! defined( 'WOOSQ_REVIEWS' ) && define( 'WOOSQ_REVIEWS', 'https://wordpress.org/support/plugin/woo-smart-quick-view/reviews/' );
 ! defined( 'WOOSQ_CHANGELOG' ) && define( 'WOOSQ_CHANGELOG', 'https://wordpress.org/plugins/woo-smart-quick-view/#developers' );
 ! defined( 'WOOSQ_DISCUSSION' ) && define( 'WOOSQ_DISCUSSION', 'https://wordpress.org/support/plugin/woo-smart-quick-view' );
-! defined( 'WPC_URI' ) && define( 'WPC_URI', WOOSQ_URI );
 
-include 'includes/dashboard/wpc-dashboard.php';
-include 'includes/kit/wpc-kit.php';
-include 'includes/hpos.php';
+// WPC Core
+require_once __DIR__ . '/includes/wpc-core/wpc-core.php';
+wpc_core_register( [
+	'file'    => __FILE__,
+	'version' => WOOSQ_VERSION,
+	'prefix'  => 'woosq',
+] );
 
 if ( ! function_exists( 'woosq_init' ) ) {
     add_action( 'plugins_loaded', 'woosq_init', 11 );
