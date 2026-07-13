@@ -3,7 +3,7 @@
 Plugin Name: WPC Smart Quick View for WooCommerce
 Plugin URI: https://wpclever.net/
 Description: WPC Smart Quick View allows users to get a quick look at products without opening the product page.
-Version: 4.3.3
+Version: 4.3.4
 Author: WPClever
 Author URI: https://wpclever.net
 Text Domain: woo-smart-quick-view
@@ -12,14 +12,14 @@ Requires Plugins: woocommerce
 Requires at least: 5.9
 Tested up to: 7.0
 WC requires at least: 3.0
-WC tested up to: 10.8
+WC tested up to: 10.9
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 */
 
 defined( 'ABSPATH' ) || exit;
 
-! defined( 'WOOSQ_VERSION' ) && define( 'WOOSQ_VERSION', '4.3.3' );
+! defined( 'WOOSQ_VERSION' ) && define( 'WOOSQ_VERSION', '4.3.4' );
 ! defined( 'WOOSQ_LITE' ) && define( 'WOOSQ_LITE', __FILE__ );
 ! defined( 'WOOSQ_FILE' ) && define( 'WOOSQ_FILE', __FILE__ );
 ! defined( 'WOOSQ_URI' ) && define( 'WOOSQ_URI', plugin_dir_url( __FILE__ ) );
@@ -219,7 +219,7 @@ if ( ! function_exists( 'woosq_init' ) ) {
                     if ( apply_filters( 'woosq_redirect', true ) ) {
                         if ( ! empty( $_REQUEST['woosq-redirect'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nonce already verified by WooCommerce add-to-cart process
                             // add 'added_to_cart' to compatible with woofc & wooac
-                            return apply_filters( 'woosq_redirect_url', add_query_arg( 'added_to_cart', '1', sanitize_url( wp_unslash( $_REQUEST['woosq-redirect'] ) ) ) );
+                            return apply_filters( 'woosq_redirect_url', add_query_arg( 'added_to_cart', '1', sanitize_url( wp_unslash( $_REQUEST['woosq-redirect'] ?? '' ) ) ) );
                         }
                     }
 
@@ -633,7 +633,7 @@ if ( ! function_exists( 'woosq_init' ) ) {
                             </div>
                         </div>
                         <h2></h2>
-                        <?php if ( isset( $_GET['settings-updated'] ) && absint( wp_unslash( $_GET['settings-updated'] ) ) ) { ?>
+                        <?php if ( isset( $_GET['settings-updated'] ) && absint( wp_unslash( $_GET['settings-updated'] ?? '' ) ) ) { ?>
                             <div class="notice notice-success is-dismissible">
                                 <p><?php esc_html_e( 'Settings updated.', 'woo-smart-quick-view' ); ?></p>
                             </div>
