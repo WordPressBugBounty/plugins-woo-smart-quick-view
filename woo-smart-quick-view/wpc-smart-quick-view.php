@@ -8,7 +8,7 @@ Author URI: https://wpclever.net
 Text Domain: woo-smart-quick-view
 Domain Path: /languages/
 Requires Plugins: woocommerce
-Version: 4.4.0
+Version: 4.4.1
 Requires at least: 5.9
 WC requires at least: 3.0
 WC tested up to: 11.1
@@ -18,7 +18,7 @@ License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
 defined( 'ABSPATH' ) || exit;
 
-! defined( 'WOOSQ_VERSION' ) && define( 'WOOSQ_VERSION', '4.4.0' );
+! defined( 'WOOSQ_VERSION' ) && define( 'WOOSQ_VERSION', '4.4.1' );
 ! defined( 'WOOSQ_LITE' ) && define( 'WOOSQ_LITE', __FILE__ );
 ! defined( 'WOOSQ_FILE' ) && define( 'WOOSQ_FILE', __FILE__ );
 ! defined( 'WOOSQ_URI' ) && define( 'WOOSQ_URI', plugin_dir_url( __FILE__ ) );
@@ -218,7 +218,12 @@ if ( ! function_exists( 'woosq_init' ) ) {
                     if ( apply_filters( 'woosq_redirect', true ) ) {
                         if ( ! empty( $_REQUEST['woosq-redirect'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nonce already verified by WooCommerce add-to-cart process
                             // add 'added_to_cart' to compatible with woofc & wooac
-                            return apply_filters( 'woosq_redirect_url', add_query_arg( 'added_to_cart', '1', sanitize_url( wp_unslash( $_REQUEST['woosq-redirect'] ?? '' ) ) ) );
+                            // Sanitize and validate redirect URL to prevent Reflected XSS and open redirect attacks.
+                            // wp_validate_redirect() ensures the URL stays on the same host (blocks javascript: URIs and external redirects).
+                            $redirect_url = esc_url_raw( wp_unslash( $_REQUEST['woosq-redirect'] ?? '' ) );
+                            $redirect_url = wp_validate_redirect( $redirect_url, wc_get_cart_url() );
+
+                            return apply_filters( 'woosq_redirect_url', add_query_arg( 'added_to_cart', '1', $redirect_url ) );
                         }
                     }
 
@@ -1369,7 +1374,7 @@ if ( ! function_exists( 'woosq_init' ) ) {
                                     'auto_close'              => self::get_setting( 'auto_close', 'yes' ),
                                     'hashchange'              => apply_filters( 'woosq_hashchange', self::get_setting( 'back_to_close', 'no' ) ),
                                     'cart_redirect'           => get_option( 'woocommerce_cart_redirect_after_add' ),
-                                    'cart_url'                => apply_filters( 'woocommerce_add_to_cart_redirect', wc_get_cart_url(), null ),
+                                    'cart_url'                => esc_url( apply_filters( 'woocommerce_add_to_cart_redirect', wc_get_cart_url(), null ) ),
                                     'close'                   => self::localization( 'close', esc_html__( 'Close (Esc)', 'woo-smart-quick-view' ) ),
                                     'next_prev'               => self::get_setting( 'next_prev', 'yes' ),
                                     'next'                    => self::localization( 'next', esc_html__( 'Next (Right arrow key)', 'woo-smart-quick-view' ) ),
