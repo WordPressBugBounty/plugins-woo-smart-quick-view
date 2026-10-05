@@ -8,7 +8,7 @@ Author URI: https://wpclever.net
 Text Domain: woo-smart-quick-view
 Domain Path: /languages/
 Requires Plugins: woocommerce
-Version: 4.4.1
+Version: 4.4.2
 Requires at least: 5.9
 WC requires at least: 3.0
 WC tested up to: 11.1
@@ -18,7 +18,7 @@ License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
 defined( 'ABSPATH' ) || exit;
 
-! defined( 'WOOSQ_VERSION' ) && define( 'WOOSQ_VERSION', '4.4.1' );
+! defined( 'WOOSQ_VERSION' ) && define( 'WOOSQ_VERSION', '4.4.2' );
 ! defined( 'WOOSQ_LITE' ) && define( 'WOOSQ_LITE', __FILE__ );
 ! defined( 'WOOSQ_FILE' ) && define( 'WOOSQ_FILE', __FILE__ );
 ! defined( 'WOOSQ_URI' ) && define( 'WOOSQ_URI', plugin_dir_url( __FILE__ ) );
@@ -252,7 +252,16 @@ if ( ! function_exists( 'woosq_init' ) ) {
                 function ajax_quickview() {
                     if ( ! apply_filters( 'woosq_disable_nonce_check', false, 'quickview' ) ) {
                         if ( ! isset( $_REQUEST['nonce'] ) || ! wp_verify_nonce( sanitize_key( wp_unslash( $_REQUEST['nonce'] ) ), 'woosq-security' ) ) {
-                            die( 'Permissions check failed!' );
+                            if ( self::get_setting( 'view', 'popup' ) === 'popup' ) {
+                                echo '<div id="woosq-popup" class="woosq-popup mfp-with-anim">';
+                            } else {
+                                echo '<span class="woosq-close"> &times; </span>';
+                            }
+                            echo '<div class="woosq-error" style="padding: 30px; text-align: center;">' . esc_html__( 'Permissions check failed!', 'woo-smart-quick-view' ) . '</div>';
+                            if ( self::get_setting( 'view', 'popup' ) === 'popup' ) {
+                                echo '</div><!-- #woosq-popup -->';
+                            }
+                            wp_die();
                         }
                     }
 
@@ -262,7 +271,20 @@ if ( ! function_exists( 'woosq_init' ) ) {
 
                     if ( $product = wc_get_product( $product_id ) ) {
                         if ( ! current_user_can( 'read_product', $product_id ) && ( $product->get_status() !== 'publish' ) ) {
-                            die( 'Permissions check failed!' );
+                            if ( self::get_setting( 'view', 'popup' ) === 'popup' ) {
+                                echo '<div id="woosq-popup" class="woosq-popup mfp-with-anim">';
+                            } else {
+                                if ( self::get_setting( 'sidebar_heading', 'no' ) === 'yes' ) {
+                                    echo '<div class="woosq-sidebar-heading"><span class="woosq-heading">' . esc_html( $product->get_name() ) . '</span><span class="woosq-close"> &times; </span></div>';
+                                } else {
+                                    echo '<span class="woosq-close"> &times; </span>';
+                                }
+                            }
+                            echo '<div class="woosq-error" style="padding: 30px; text-align: center;">' . esc_html__( 'Permissions check failed!', 'woo-smart-quick-view' ) . '</div>';
+                            if ( self::get_setting( 'view', 'popup' ) === 'popup' ) {
+                                echo '</div><!-- #woosq-popup -->';
+                            }
+                            wp_die();
                         }
 
                         $post = get_post( $product_id );
@@ -365,126 +387,136 @@ if ( ! function_exists( 'woosq_init' ) ) {
                                         <?php
                                         do_action( 'woosq_product_summary_before', $product );
 
-                                        // fields
-                                        $saved_fields = self::$default_fields;
+                                        if ( post_password_required( $product_id ) ) {
+                                            do_action( 'woosq_before_title', $product );
+                                            woocommerce_template_single_title();
+                                            do_action( 'woosq_after_title', $product );
 
-                                        if ( is_array( $saved_fields ) && ! empty( $saved_fields ) ) {
-                                            foreach ( $saved_fields as $field ) {
-                                                switch ( $field ) {
-                                                    case 'title':
-                                                        do_action( 'woosq_before_title', $product );
-                                                        woocommerce_template_single_title();
-                                                        do_action( 'woosq_after_title', $product );
-                                                        break;
-                                                    case 'rating':
-                                                        do_action( 'woosq_before_rating', $product );
-                                                        woocommerce_template_single_rating();
-                                                        do_action( 'woosq_after_rating', $product );
-                                                        break;
-                                                    case 'price':
-                                                        do_action( 'woosq_before_price', $product );
-                                                        woocommerce_template_single_price();
-                                                        do_action( 'woosq_after_price', $product );
-                                                        break;
-                                                    case 'excerpt':
-                                                        do_action( 'woosq_before_short_description', $product );
-                                                        do_action( 'woosq_before_excerpt', $product );
+                                            $password_msg = self::localization( 'password_protected', esc_html__( 'Open product page to enter password.', 'woo-smart-quick-view' ) );
+                                            echo '<div class="woosq-password-required">' . esc_html( $password_msg ) . '</div>';
+                                        } else {
+                                            // fields
+                                            $saved_fields = self::$default_fields;
 
-                                                        if ( is_a( $product, 'WC_Product_Variation' ) ) {
-                                                            $excerpt = $product->get_description();
-                                                        } else {
-                                                            $excerpt = $product->get_short_description();
-                                                        }
+                                            if ( is_array( $saved_fields ) && ! empty( $saved_fields ) ) {
+                                                foreach ( $saved_fields as $field ) {
+                                                    switch ( $field ) {
+                                                        case 'title':
+                                                            do_action( 'woosq_before_title', $product );
+                                                            woocommerce_template_single_title();
+                                                            do_action( 'woosq_after_title', $product );
+                                                            break;
+                                                        case 'rating':
+                                                            do_action( 'woosq_before_rating', $product );
+                                                            woocommerce_template_single_rating();
+                                                            do_action( 'woosq_after_rating', $product );
+                                                            break;
+                                                        case 'price':
+                                                            do_action( 'woosq_before_price', $product );
+                                                            woocommerce_template_single_price();
+                                                            do_action( 'woosq_after_price', $product );
+                                                            break;
+                                                        case 'excerpt':
+                                                            do_action( 'woosq_before_short_description', $product );
+                                                            do_action( 'woosq_before_excerpt', $product );
 
-                                                        $excerpt = apply_filters( 'woosq_product_short_description', $excerpt, $product );
+                                                            if ( is_a( $product, 'WC_Product_Variation' ) ) {
+                                                                $excerpt = $product->get_description();
+                                                            } else {
+                                                                $excerpt = $product->get_short_description();
+                                                            }
 
-                                                        if ( ! empty( $excerpt ) ) {
-                                                            echo '<div class="product-short-description product-excerpt">' . do_shortcode( $excerpt ) . '</div>';
-                                                        }
+                                                            $excerpt = apply_filters( 'woosq_product_short_description', $excerpt, $product );
 
-                                                        do_action( 'woosq_after_excerpt', $product );
-                                                        do_action( 'woosq_after_short_description', $product );
-                                                        break;
-                                                    case 'add_to_cart':
-                                                        do_action( 'woosq_before_add_to_cart', $product );
+                                                            if ( ! empty( $excerpt ) ) {
+                                                                echo '<div class="product-short-description product-excerpt">' . do_shortcode( $excerpt ) . '</div>';
+                                                            }
 
-                                                        if ( self::get_setting( 'add_to_cart_button', 'single' ) === 'archive' ) {
-                                                            woocommerce_template_loop_add_to_cart();
-                                                        } else {
-                                                            woocommerce_template_single_add_to_cart();
-                                                        }
+                                                            do_action( 'woosq_after_excerpt', $product );
+                                                            do_action( 'woosq_after_short_description', $product );
+                                                            break;
+                                                        case 'add_to_cart':
+                                                            do_action( 'woosq_before_add_to_cart', $product );
 
-                                                        do_action( 'woosq_after_add_to_cart', $product );
-                                                        break;
-                                                    case 'meta':
-                                                        do_action( 'woosq_before_meta', $product );
-                                                        woocommerce_template_single_meta();
-                                                        do_action( 'woosq_after_meta', $product );
-                                                        break;
-                                                    case 'description':
-                                                        do_action( 'woosq_before_description', $product );
+                                                            if ( self::get_setting( 'add_to_cart_button', 'single' ) === 'archive' ) {
+                                                                woocommerce_template_loop_add_to_cart();
+                                                            } else {
+                                                                woocommerce_template_single_add_to_cart();
+                                                            }
 
-                                                        $description = apply_filters( 'woosq_product_description', $product->get_description(), $product );
+                                                            do_action( 'woosq_after_add_to_cart', $product );
+                                                            break;
+                                                        case 'meta':
+                                                            do_action( 'woosq_before_meta', $product );
+                                                            woocommerce_template_single_meta();
+                                                            do_action( 'woosq_after_meta', $product );
+                                                            break;
+                                                        case 'description':
+                                                            do_action( 'woosq_before_description', $product );
 
-                                                        if ( ! empty( $description ) ) {
-                                                            echo '<div class="product-description">' . do_shortcode( $description ) . '</div>';
-                                                        }
+                                                            $description = apply_filters( 'woosq_product_description', $product->get_description(), $product );
 
-                                                        do_action( 'woosq_after_description', $product );
-                                                        break;
-                                                    case 'weight':
-                                                        do_action( 'woosq_before_weight', $product );
+                                                            if ( ! empty( $description ) ) {
+                                                                echo '<div class="product-description">' . do_shortcode( $description ) . '</div>';
+                                                            }
 
-                                                        echo '<div class="woosq-weight">';
+                                                            do_action( 'woosq_after_description', $product );
+                                                            break;
+                                                        case 'weight':
+                                                            do_action( 'woosq_before_weight', $product );
 
-                                                        if ( $field['label'] !== '' ) {
-                                                            echo '<span class="woosq-weight-label">' . esc_html( $field['label'] ) . '</span>';
-                                                        }
+                                                            echo '<div class="woosq-weight">';
 
-                                                        echo '<span class="woosq-weight-value">' . wp_kses_post( apply_filters( 'woosq_product_dimensions', wc_format_weight( $product->get_weight() ), $product ) ) . '</span>';
-                                                        echo '</div>';
+                                                            if ( $field['label'] !== '' ) {
+                                                                echo '<span class="woosq-weight-label">' . esc_html( $field['label'] ) . '</span>';
+                                                            }
 
-                                                        do_action( 'woosq_after_weight', $product );
-                                                        break;
-                                                    case 'dimensions':
-                                                        do_action( 'woosq_before_dimensions', $product );
+                                                            echo '<span class="woosq-weight-value">' . wp_kses_post( apply_filters( 'woosq_product_dimensions', wc_format_weight( $product->get_weight() ), $product ) ) . '</span>';
+                                                            echo '</div>';
 
-                                                        echo '<div class="woosq-dimensions">';
+                                                            do_action( 'woosq_after_weight', $product );
+                                                            break;
+                                                        case 'dimensions':
+                                                            do_action( 'woosq_before_dimensions', $product );
 
-                                                        if ( $field['label'] !== '' ) {
-                                                            echo '<span class="woosq-dimensions-label">' . esc_html( $field['label'] ) . '</span>';
-                                                        }
+                                                            echo '<div class="woosq-dimensions">';
 
-                                                        echo '<span class="woosq-dimensions-value">' . wp_kses_post( apply_filters( 'woosq_product_dimensions', wc_format_dimensions( $product->get_dimensions( false ) ), $product ) ) . '</span>';
-                                                        echo '</div>';
+                                                            if ( $field['label'] !== '' ) {
+                                                                echo '<span class="woosq-dimensions-label">' . esc_html( $field['label'] ) . '</span>';
+                                                            }
 
-                                                        do_action( 'woosq_after_dimensions', $product );
-                                                        break;
-                                                    case 'availability':
-                                                        do_action( 'woosq_before_availability', $product );
+                                                            echo '<span class="woosq-dimensions-value">' . wp_kses_post( apply_filters( 'woosq_product_dimensions', wc_format_dimensions( $product->get_dimensions( false ) ), $product ) ) . '</span>';
+                                                            echo '</div>';
 
-                                                        echo '<div class="woosq-availability">';
+                                                            do_action( 'woosq_after_dimensions', $product );
+                                                            break;
+                                                        case 'availability':
+                                                            do_action( 'woosq_before_availability', $product );
 
-                                                        if ( $field['label'] !== '' ) {
-                                                            echo '<span class="woosq-availability-label">' . esc_html( $field['label'] ) . '</span>';
-                                                        }
+                                                            echo '<div class="woosq-availability">';
 
-                                                        echo '<span class="woosq-availability-value">' . wp_kses_post( apply_filters( 'woosq_product_availability', wc_get_stock_html( $product ), $product ) ) . '</span>';
-                                                        echo '</div>';
+                                                            if ( $field['label'] !== '' ) {
+                                                                echo '<span class="woosq-availability-label">' . esc_html( $field['label'] ) . '</span>';
+                                                            }
 
-                                                        do_action( 'woosq_after_availability', $product );
-                                                        break;
-                                                    case 'additional':
-                                                        do_action( 'woosq_before_additional', $product );
-                                                        wc_display_product_attributes( $product );
-                                                        do_action( 'woosq_after_additional', $product );
-                                                        break;
+                                                            echo '<span class="woosq-availability-value">' . wp_kses_post( apply_filters( 'woosq_product_availability', wc_get_stock_html( $product ), $product ) ) . '</span>';
+                                                            echo '</div>';
+
+                                                            do_action( 'woosq_after_availability', $product );
+                                                            break;
+                                                        case 'additional':
+                                                            do_action( 'woosq_before_additional', $product );
+                                                            wc_display_product_attributes( $product );
+                                                            do_action( 'woosq_after_additional', $product );
+                                                            break;
+                                                    }
                                                 }
                                             }
-                                        }
 
-                                        // old version < 4.0
-                                        do_action( 'woosq_product_summary', $product );
+                                            // old version < 4.0
+                                            do_action( 'woosq_product_summary', $product );
+
+                                        }
 
                                         do_action( 'woosq_product_summary_after', $product );
                                         ?>
@@ -505,6 +537,17 @@ if ( ! function_exists( 'woosq_init' ) ) {
                         }
 
                         wp_reset_postdata();
+                    } else {
+                        if ( self::get_setting( 'view', 'popup' ) === 'popup' ) {
+                            echo '<div id="woosq-popup" class="woosq-popup mfp-with-anim">';
+                        } else {
+                            echo '<span class="woosq-close"> &times; </span>';
+                        }
+                        $not_found_msg = self::localization( 'not_found', esc_html__( 'Product not found!', 'woo-smart-quick-view' ) );
+                        echo '<div class="woosq-error" style="padding: 30px; text-align: center;">' . esc_html( $not_found_msg ) . '</div>';
+                        if ( self::get_setting( 'view', 'popup' ) === 'popup' ) {
+                            echo '</div><!-- #woosq-popup -->';
+                        }
                     }
 
                     wp_die();
@@ -1253,6 +1296,28 @@ if ( ! function_exists( 'woosq_init' ) ) {
                                                                name="woosq_localization[view_details]"
                                                                value="<?php echo esc_attr( self::localization( 'view_details' ) ); ?>"
                                                                placeholder="<?php esc_attr_e( 'View product details', 'woo-smart-quick-view' ); ?>"/>
+                                                    </label>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <th><?php esc_html_e( 'Password protected', 'woo-smart-quick-view' ); ?></th>
+                                                <td>
+                                                    <label>
+                                                        <input type="text" class="regular-text"
+                                                               name="woosq_localization[password_protected]"
+                                                               value="<?php echo esc_attr( self::localization( 'password_protected' ) ); ?>"
+                                                               placeholder="<?php esc_attr_e( 'Open product page to enter password.', 'woo-smart-quick-view' ); ?>"/>
+                                                    </label>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <th><?php esc_html_e( 'Product not found', 'woo-smart-quick-view' ); ?></th>
+                                                <td>
+                                                    <label>
+                                                        <input type="text" class="regular-text"
+                                                               name="woosq_localization[not_found]"
+                                                               value="<?php echo esc_attr( self::localization( 'not_found' ) ); ?>"
+                                                               placeholder="<?php esc_attr_e( 'Product not found!', 'woo-smart-quick-view' ); ?>"/>
                                                     </label>
                                                 </td>
                                             </tr>
