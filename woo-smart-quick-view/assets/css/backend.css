@@ -249,7 +249,7 @@
 }
 
 .woosq-form-table th {
-  text-align: left;
+  text-align: start;
   padding: 14px 16px 14px 0;
   font-weight: 500;
   color: #374151;

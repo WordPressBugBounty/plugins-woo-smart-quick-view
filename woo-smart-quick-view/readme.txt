@@ -3,7 +3,7 @@ Contributors: wpclever
 Donate link: https://wpclever.net
 Tags: woocommerce, wpc, quickview, quick-view
 Tested up to: 7.1
-Stable tag: 4.4.2
+Stable tag: 4.4.3
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -86,6 +86,10 @@ Example:
 
 == Changelog ==
 
+= 4.4.3 =
+* Fixed: Minor CSS/JS issues in the backend
+* Updated: Compatible with WP 7.1 & Woo 11.3
+
 = 4.4.2 =
 * Fixed: Vulnerability reported by Jiemook (jiemook06@proton.me)
 
@@ -101,7 +105,7 @@ Example:
 * Updated: Compatible with WP 7.1 & Woo 11.1
 
 = 4.3.5 =
-* Fixed: Minor CSS/JS issue for the backend
+* Fixed: Minor CSS/JS issues in the backend
 
 = 4.3.4 =
 * Updated: Optimized the code
@@ -112,14 +116,14 @@ Example:
 * Updated: Compatible with WP 7.0 & Woo 10.8
 
 = 4.3.2 =
-* Fixed: Minor CSS/JS issue for the backend
+* Fixed: Minor CSS/JS issues in the backend
 * Updated: Compatible with WP 6.9 & Woo 10.7
 
 = 4.3.1 =
 * Updated: Optimized the code
 
 = 4.3.0 =
-* Fixed: Minor CSS/JS issue for the backend
+* Fixed: Minor CSS/JS issues in the backend
 * Updated: Compatible with WP 6.9 & Woo 10.6
 
 = 4.2.9 =
@@ -139,7 +143,7 @@ Example:
 * Fixed: Security vulnerability reported by Wordfence
 
 = 4.2.4 =
-* Fixed: Minor CSS/JS issue for the backend
+* Fixed: Minor CSS/JS issues in the backend
 * Updated: Compatible with WP 6.8 & Woo 10.2
 
 = 4.2.3 =
@@ -151,13 +155,13 @@ Example:
 
 = 4.2.1 =
 * Updated: Optimized the code
-* Fixed: Minor CSS/JS issue for the backend
+* Fixed: Minor CSS/JS issues in the backend
 
 = 4.2.0 =
-* Fixed: Minor CSS/JS issue for the backend
+* Fixed: Minor CSS/JS issues in the backend
 
 = 4.1.9 =
-* Fixed: Minor CSS/JS issue for the backend
+* Fixed: Minor CSS/JS issues in the backend
 * Updated: Compatible with WP 6.8 & Woo 9.9
 
 = 4.1.8 =
@@ -229,10 +233,10 @@ Example:
 * Fixed: Redirect after added to cart to compatible with WPC Fly Cart & WPC Added To Cart Notification
 
 = 3.5.2 =
-* Fixed: Minor CSS/JS issue for the backend
+* Fixed: Minor CSS/JS issues in the backend
 
 = 3.5.1 =
-* Fixed: Minor CSS/JS issue for the backend
+* Fixed: Minor CSS/JS issues in the backend
 * Added: Filter hook 'woosq_button_rel'
 
 = 3.5.0 =

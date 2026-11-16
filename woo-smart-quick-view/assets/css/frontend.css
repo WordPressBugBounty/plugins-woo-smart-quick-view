@@ -366,6 +366,11 @@
     transition: all 0.15s ease-out;
 }
 
+body.rtl .view-details-btn {
+    left: 0;
+    right: auto;
+}
+
 .view-details-btn:after {
     content: '\e90f';
     font-family: "feather";
