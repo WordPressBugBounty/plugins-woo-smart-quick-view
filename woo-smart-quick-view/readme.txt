@@ -3,7 +3,7 @@ Contributors: wpclever
 Donate link: https://wpclever.net
 Tags: woocommerce, wpc, quickview, quick-view
 Tested up to: 7.1
-Stable tag: 4.4.3
+Stable tag: 4.4.4
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -85,6 +85,9 @@ Example:
 });`
 
 == Changelog ==
+
+= 4.4.4 =
+* Fixed: Missing authorization in the quick view AJAX handler, which allowed access to variations of unpublished products
 
 = 4.4.3 =
 * Fixed: Minor CSS/JS issues in the backend

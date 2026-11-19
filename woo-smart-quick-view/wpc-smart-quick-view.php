@@ -8,7 +8,7 @@ Author URI: https://wpclever.net
 Text Domain: woo-smart-quick-view
 Domain Path: /languages/
 Requires Plugins: woocommerce
-Version: 4.4.3
+Version: 4.4.4
 Requires at least: 5.9
 WC requires at least: 3.0
 WC tested up to: 11.3
@@ -18,7 +18,7 @@ License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
 defined( 'ABSPATH' ) || exit;
 
-! defined( 'WOOSQ_VERSION' ) && define( 'WOOSQ_VERSION', '4.4.3' );
+! defined( 'WOOSQ_VERSION' ) && define( 'WOOSQ_VERSION', '4.4.4' );
 ! defined( 'WOOSQ_LITE' ) && define( 'WOOSQ_LITE', __FILE__ );
 ! defined( 'WOOSQ_FILE' ) && define( 'WOOSQ_FILE', __FILE__ );
 ! defined( 'WOOSQ_URI' ) && define( 'WOOSQ_URI', plugin_dir_url( __FILE__ ) );
@@ -249,6 +249,44 @@ if ( ! function_exists( 'woosq_init' ) ) {
                     return $link;
                 }
 
+                /**
+                 * Check whether the current visitor may view the given product.
+                 * Variations are authorized against their parent product.
+                 *
+                 * @param WC_Product $product
+                 *
+                 * @return bool
+                 */
+                function can_view_product( $product ) {
+                    if ( ! is_a( $product, 'WC_Product' ) ) {
+                        return false;
+                    }
+
+                    $check_id = $product->get_id();
+
+                    if ( $product->is_type( 'variation' ) ) {
+                        // a variation is always "publish", so authorize against its parent
+                        $check_id = $product->get_parent_id() ?: wp_get_post_parent_id( $check_id );
+
+                        if ( ! $check_id || ! wc_get_product( $check_id ) ) {
+                            return false;
+                        }
+                    }
+
+                    $can_edit = current_user_can( 'edit_post', $check_id );
+
+                    if ( get_post_status( $check_id ) !== 'publish' && ! current_user_can( 'read_product', $check_id ) ) {
+                        return false;
+                    }
+
+                    // password protected products
+                    if ( post_password_required( $check_id ) && ! $can_edit ) {
+                        return false;
+                    }
+
+                    return (bool) apply_filters( 'woosq_can_view_product', true, $product );
+                }
+
                 function ajax_quickview() {
                     if ( ! apply_filters( 'woosq_disable_nonce_check', false, 'quickview' ) ) {
                         if ( ! isset( $_REQUEST['nonce'] ) || ! wp_verify_nonce( sanitize_key( wp_unslash( $_REQUEST['nonce'] ) ), 'woosq-security' ) ) {
@@ -270,7 +308,7 @@ if ( ! function_exists( 'woosq_init' ) ) {
                     global $post, $product;
 
                     if ( $product = wc_get_product( $product_id ) ) {
-                        if ( ! current_user_can( 'read_product', $product_id ) && ( $product->get_status() !== 'publish' ) ) {
+                        if ( ! self::can_view_product( $product ) ) {
                             if ( self::get_setting( 'view', 'popup' ) === 'popup' ) {
                                 echo '<div id="woosq-popup" class="woosq-popup mfp-with-anim">';
                             } else {
